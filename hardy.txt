@@ -1,4 +1,4 @@
-Age,male_n,male_mean,male_s,female_n,female_mean,female_sd
+Age,male_n,male_mean,male_sd,female_n,female_mean,female_sd
 2 years,985,18,2.5,933,17.6,2.4
 4 years,1066,16.3,1.6,1046,16,1.6
 6 years,999,15.9,1.3,1000,15.7,1.4
