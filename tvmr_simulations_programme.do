@@ -1,7 +1,10 @@
 ********************************************************************************
-* Time-varying MR simulations
-* Tim Morris
-* 18/11/2021
+* Time-varying MR simulations for: 
+*		Morris TT, Heron J, Sanderson E, Davey Smith G, Didelez V, Tilling K. 
+*			Interpretation of mendelian randomization using a single measure of 
+*			an exposure that varies over time.
+* Tim Morris & Kate Tilling
+* 07/06/2022
 ********************************************************************************
 
 cd "<PATHWAY>"
@@ -209,8 +212,8 @@ foreach number in 0 1 {
 }
 }
 }
-table parameter model number if target=="x1", c(mean _b_x1 mean _se_x1 mean bias) format(%9.3f)
-table parameter model number if target=="x2", c(mean _b_x2 mean _se_x2 mean bias) format(%9.3f)
+table parameter model number if target=="x1", c(mean _b_x1 mean _se_x1 mean bias mean bias_se) format(%9.3f)
+table parameter model number if target=="x2", c(mean _b_x2 mean _se_x2 mean bias mean bias_se) format(%9.3f)
 
 
 ********************************************************************************
@@ -218,7 +221,7 @@ table parameter model number if target=="x2", c(mean _b_x2 mean _se_x2 mean bias
 * 		al (2009). Standard errors are computed using eq4 in Burgesset al (2017)
 * 		ignoring covariance between SNP-exposure associations at different ages.
 
-import delimited using https://github.com/timtmorris/time-varying-MR/blob/293801982fe792a496165b5dd5afe12dbad912d7/hardy_datapoints.txt, clear
+import delimited using https://raw.githubusercontent.com/timtmorris/time-varying-MR/main/hardy_datapoints.txt, clear
 
 * Calculating MR results:
 gen timpson_sbp_beta=0.63
@@ -242,15 +245,15 @@ table age, c(mean gied mean gied_se) format(%9.2f) center
 ********************************************************************************
 * Code to create Figure 4 (Hardy et al, Table 2): 
 
-import delimited using https://github.com/timtmorris/time-varying-MR/blob/293801982fe792a496165b5dd5afe12dbad912d7/hardy_genotype.txt, clear
+import delimited using https://raw.githubusercontent.com/timtmorris/time-varying-MR/main/hardy_genotype.txt, clear
 
 twoway (scatter tt age, color(navy%30) msymbol(T)) ///
-	(scatter ta age, color(red%30) msymbol(X)) ///
+	(scatter ta age, color(red%50) msymbol(X) msize(large)) ///
 	(scatter aa age, color(green%30) ///
-	ytitle("BMI") xtitle("Age") legend(order (1 "TT" 2 "TA" 3 "AA") rows(1)) ///
+	ytitle("BMI") xtitle("Age") legend(subtitle("rs9939609 genotype") order (1 "TT" 2 "TA" 3 "AA") rows(1)) ///
 	ylab(, nogrid) ///
 	graphregion(color(white)))
-graph export "figures/hardy.tif", replace width(2000)
+graph export "figures/hardy.tif", replace width(3000)
 
 
 ********************************************************************************
@@ -503,9 +506,10 @@ end
 foreach number in 0 1 {
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0 0.3 0.4 0.4 0.3*`number' y2 x1 
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="invariant"
 	gen target="x1"
 	gen pathway="gx1"
@@ -515,9 +519,10 @@ foreach number in 0 1 {
 	
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0 0.3 0.4 0.4 0.3*`number' y2 x1 snp
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="invariant"
 	gen target="x1"
 	gen pathway="gx1"
@@ -527,9 +532,10 @@ foreach number in 0 1 {
 	
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0.5 0 0.4 0.4 0.3*`number' y2 x1 
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="varying"
 	gen pathway="x0x1"
 	gen target="x1"
@@ -539,9 +545,10 @@ foreach number in 0 1 {
 	
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0.5 0 0.4 0.4 0.3*`number' y2 x1 snp
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="varying"
 	gen pathway="x0x1"
 	gen target="x1"
@@ -551,9 +558,10 @@ foreach number in 0 1 {
 	
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0.5 0.3 0.4 0.4 0.3*`number' y2 x1 
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="varying"
 	gen target="x1"
 	gen pathway="none"
@@ -563,9 +571,10 @@ foreach number in 0 1 {
 	
 	simulate _b _se effnaive efftrue, reps(1000): ols_naive 10000 0.5 0.5 0.3 0.4 0.4 0.3*`number' y2 x1 snp
 	summ *
-	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 _eq2_sim_2
-	gen bias_naive=_b_x-_eq2_sim_1
-	gen bias_true=_b_x-_eq2_sim_2
+	bootstrap r(diff), reps(1000): mydiff
+	gen bias=_b[_bs_1]
+	gen bias_se=_se[_bs_1]
+	collapse (mean) _b_x1 _se_x1 _eq2_sim_1 bias bias_se 
 	gen time="varying"
 	gen target="x1"
 	gen pathway="none"
@@ -582,12 +591,12 @@ foreach number in 0 1 {
 	append using "datasets/ols_confounding_full_nosnp_`number'.dta"
 	append using "datasets/ols_confounding_full_snp_`number'.dta"
 }
-table number if snp=="No" & pathway=="gx1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
-table number if snp=="Yes" & pathway=="gx1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
-table number if snp=="No" & pathway=="x0x1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
-table number if snp=="Yes" & pathway=="x0x1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
-table number if snp=="No" & pathway=="none", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
-table number if snp=="Yes" & pathway=="none", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean _eq2_sim_2) format(%9.3f)
+table number if snp=="No" & pathway=="gx1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
+table number if snp=="Yes" & pathway=="gx1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
+table number if snp=="No" & pathway=="x0x1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
+table number if snp=="Yes" & pathway=="x0x1", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
+table number if snp=="No" & pathway=="none", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
+table number if snp=="Yes" & pathway=="none", c(mean _b_x1 mean _se_x1 mean _eq2_sim_1 mean bias mean bias_se) format(%9.3f)
 
 
 * END
